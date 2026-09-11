@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.echovoice.camera",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7D:0F:52:AB:78:E5:6D:76:5C:B6:FD:8D:18:03:7E:24:90:5E:27:AB:33:DE:74:9F:86:75:A8:FD:44"
+      ]
+    }
+  }
+]

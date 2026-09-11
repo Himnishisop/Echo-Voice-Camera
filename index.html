@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1"
+    />
+    <title>Echo Voice Camera</title>
+
+    <!-- installable app (Add to Home Screen -> fullscreen, app-like) -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="alternate" type="application/manifest+json" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0a1633" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Echo Voice Camera" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Register PWA service worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .catch(function (err) {
+              console.warn("SW register warning:", err);
+            });
+        });
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

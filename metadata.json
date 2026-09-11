@@ -1,0 +1,9 @@
+{
+  "name": "Echo Voice Camera",
+  "description": "Record audio and video with real-time studio effects including echo, reverb, volume boosting, and video trimming.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

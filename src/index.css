@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  background: #0a1633;
+}
+
+body {
+  margin: 0;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #fafafa;
+}
+
+/* keep the app feeling like an app: no text selection drag, no tap highlight */
+button,
+video,
+canvas {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input[type="range"] {
+  touch-action: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* export button attention */
+@keyframes afxPulse {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.18) saturate(1.25);
+    transform: scale(1.015);
+  }
+}
+
+@keyframes afxSweep {
+  0% {
+    transform: translateX(-160%);
+  }
+  60%,
+  100% {
+    transform: translateX(340%);
+  }
+}
