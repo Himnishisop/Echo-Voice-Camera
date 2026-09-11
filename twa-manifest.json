@@ -1,0 +1,19 @@
+{
+  "packageId": "com.files.echovoicecamera",
+  "name": "Echo Voice Camera",
+  "launcherName": "Echo Voice",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#0A1633",
+  "navigationColor": "#0A1633",
+  "backgroundColor": "#0A1633",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "icon-512.png",
+  "maskableIconUrl": "icon-512.png",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "alias": "android"
+  }
+}

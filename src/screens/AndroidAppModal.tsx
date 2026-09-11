@@ -200,8 +200,8 @@ export function AndroidAppModal({
 
                   <div className="rounded-lg bg-black/40 p-2 border border-white/10">
                     <p className="text-emerald-400 font-medium">2. Package Name</p>
-                    <p className="text-[11px] text-gray-400">Create your app on Play Console with an application ID like:</p>
-                    <p className="font-mono text-[11px] text-white">com.echovoice.camera</p>
+                    <p className="text-[11px] text-gray-400">Your Google Play application ID is:</p>
+                    <p className="font-mono text-[11px] text-white select-all">com.files.echovoicecamera</p>
                   </div>
 
                   <div className="rounded-lg bg-black/40 p-2 border border-white/10">

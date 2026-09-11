@@ -11,6 +11,13 @@
   "background_color": "#0a1633",
   "theme_color": "#0a1633",
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.files.echovoicecamera",
+      "url": "https://play.google.com/store/apps/details?id=com.files.echovoicecamera"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
