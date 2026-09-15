@@ -17,6 +17,7 @@ type Tab = "delay" | "reverb" | "volume" | "trim" | null;
 export default function Editor({
   kind,
   url,
+  knownDuration,
   fx,
   setFx,
   trim,
@@ -27,6 +28,7 @@ export default function Editor({
 }: {
   kind: MediaKind;
   url: string;
+  knownDuration?: number;
   fx: FxState;
   setFx: (f: FxState) => void;
   trim: { start: number; end: number };
@@ -50,7 +52,7 @@ export default function Editor({
   const [advanced, setAdvanced] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
-  const [dur, setDur] = useState(0);
+  const [dur, setDur] = useState(() => (knownDuration && knownDuration > 0 ? knownDuration : 0));
   const [getLevel, setGetLevel] = useState<() => number | null>(() => null);
   const trimEnd = trim.end > 0 ? trim.end : dur;
   const trimmed = trim.start > 0.05 || (trim.end > 0 && trim.end < dur - 0.05);
@@ -100,7 +102,38 @@ export default function Editor({
           /* noop */
         }
       };
+      // Try attaching immediately and whenever metadata loads
       attach();
+      elRef.current?.addEventListener("loadedmetadata", attach, { once: true });
+      elRef.current?.addEventListener("canplay", attach, { once: true });
+
+      // Initialize duration accurately
+      if (knownDuration && knownDuration > 0) {
+        setDur(knownDuration);
+        if (trimRef.current.end === 0) setTrim({ start: 0, end: knownDuration });
+      } else {
+        // Probe audio track for 100% accurate file duration (prevents 3s truncation bug)
+        (async () => {
+          try {
+            const resp = await fetch(url);
+            const ab = await resp.arrayBuffer();
+            const tempCtx = new (window.AudioContext ||
+              (window as unknown as { webkitAudioContext: typeof AudioContext })
+                .webkitAudioContext)();
+            const buf = await tempCtx.decodeAudioData(ab.slice(0));
+            await tempCtx.close().catch(() => {});
+            if (dead) return;
+            if (buf && buf.duration > 0) {
+              setDur((prev) => (prev > 0 ? prev : buf.duration));
+              if (trimRef.current.end === 0) {
+                setTrim({ start: 0, end: buf.duration });
+              }
+            }
+          } catch {
+            /* noop */
+          }
+        })();
+      }
     } else {
       (async () => {
         try {
@@ -153,27 +186,31 @@ export default function Editor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exporting]);
 
-  // video metadata -> real duration (recorded blobs report Infinity)
+  // video metadata -> real duration
   const onMeta = () => {
     if (!isVideo) return;
     const el = elRef.current;
     if (!el) return;
     const apply = (d: number) => {
       if (!isFinite(d) || d <= 0) return;
-      setDur(d);
-      setTrim({ start: 0, end: d });
-      el.currentTime = 0;
+      setDur((prev) => (prev > 0 ? prev : d));
+      if (trimRef.current.end === 0) setTrim({ start: 0, end: d });
     };
+    if (knownDuration && knownDuration > 0) {
+      apply(knownDuration);
+      return;
+    }
     if (isFinite(el.duration) && el.duration > 0) {
       apply(el.duration);
       return;
     }
-    const onUpdate = () => {
-      el.removeEventListener("timeupdate", onUpdate);
-      apply(el.duration);
-    };
-    el.addEventListener("timeupdate", onUpdate);
-    el.currentTime = 1e101;
+    if (el.seekable && el.seekable.length > 0) {
+      const sEnd = el.seekable.end(el.seekable.length - 1);
+      if (isFinite(sEnd) && sEnd > 0) {
+        apply(sEnd);
+        return;
+      }
+    }
   };
 
   const currentPos = () => {
@@ -213,8 +250,15 @@ export default function Editor({
       const el = elRef.current;
       if (el) {
         try {
+          el.muted = false;
           el.currentTime = off;
-          el.play().catch(() => {});
+          const p = el.play();
+          if (p && typeof p.catch === "function") {
+            p.catch(() => {
+              // If browser blocked unmuted autoplay, retry
+              el.play().catch(() => {});
+            });
+          }
         } catch {
           /* noop */
         }
@@ -315,10 +359,14 @@ export default function Editor({
   return (
     <div className="flex h-full flex-col overflow-hidden" style={{ background: C.bg }}>
       {/* ---------- realtime preview ---------- */}
-      <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3">
+      <div
+        className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top, 12px))" }}
+      >
         <button
           onClick={onBack}
-          className="flex items-center gap-1 text-[12px] active:scale-95"
+          disabled={exporting}
+          className="flex items-center gap-1 text-[12px] active:scale-95 disabled:opacity-40"
           style={{ color: C.silverDim }}
         >
           ← Retake
@@ -341,8 +389,11 @@ export default function Editor({
               ref={elRef}
               src={url}
               playsInline
+              webkit-playsinline="true"
+              preload="auto"
+              crossOrigin="anonymous"
               loop={false}
-              className="h-full w-full bg-black object-contain"
+              className="h-full w-full bg-black object-contain pointer-events-auto"
               onClick={toggle}
               onLoadedMetadata={onMeta}
               onEnded={() => startPlayback(trimRef.current.start)}
@@ -501,9 +552,15 @@ export default function Editor({
       </div>
 
       {/* ---------- export ---------- */}
-      <div className="shrink-0 px-4 pb-6 pt-3">
+      <div
+        className="shrink-0 px-4 pt-3"
+        style={{ paddingBottom: "max(24px, calc(env(safe-area-inset-bottom, 0px) + 14px))" }}
+      >
         <button
-          onClick={onExport}
+          onClick={() => {
+            stopPlayback();
+            onExport();
+          }}
           disabled={exporting}
           className="relative w-full overflow-hidden rounded-2xl py-[15px] text-[15px] font-bold uppercase tracking-[0.12em] transition active:scale-[0.98] disabled:opacity-60"
           style={{

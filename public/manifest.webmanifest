@@ -6,7 +6,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "categories": ["photo", "video", "music", "productivity"],
   "background_color": "#0a1633",
   "theme_color": "#0a1633",

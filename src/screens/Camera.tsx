@@ -161,7 +161,10 @@ export default function Camera({
   return (
     <div className="flex h-full flex-col" style={{ background: C.bg }}>
       {/* ---------- top actions ---------- */}
-      <div className="flex items-center gap-2 px-4 pt-3">
+      <div
+        className="flex items-center gap-2 px-4 pb-2"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top, 12px))" }}
+      >
         <button
           onClick={onImport}
           className="flex flex-1 items-center justify-center gap-2 rounded-full border py-2.5 text-[12px] font-medium backdrop-blur active:scale-[0.97]"
@@ -400,7 +403,13 @@ export default function Camera({
       </div>
 
       {/* ---------- record button ---------- */}
-      <div className="flex flex-col items-center gap-2 pb-8 pt-3" style={{ background: C.bg }}>
+      <div
+        className="flex flex-col items-center gap-2 pt-3"
+        style={{
+          background: C.bg,
+          paddingBottom: "max(32px, calc(env(safe-area-inset-bottom, 0px) + 16px))",
+        }}
+      >
         <button
           onClick={recording ? stop : start}
           className="grid h-[74px] w-[74px] place-items-center rounded-full border-[3px] transition active:scale-95"

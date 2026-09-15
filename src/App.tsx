@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import Camera from "./screens/Camera";
 import Editor from "./screens/Editor";
 import { Login, Paywall } from "./screens/Onboarding";
-import { defaultFx, download, type FxState, type MediaKind } from "./lib/audio";
+import { defaultFx, download, type FxState, type MediaKind, type Chain } from "./lib/audio";
 import { type Recording } from "./lib/recorder";
-import { renderAudioBuffer, encodeMp3, renderVideoMp4, type Progress } from "./lib/encode";
+import { renderAudioBuffer, encodeMp3, renderVideoMp4, probeMediaDuration, type Progress } from "./lib/encode";
 import { ExportOverlay } from "./screens/ExportOverlay";
 import { AndroidAppModal } from "./screens/AndroidAppModal";
 import { C } from "./lib/theme";
@@ -97,13 +97,14 @@ export default function App() {
     setStage("editor");
   };
 
-  const importFile = (f: File) => {
+  const importFile = async (f: File) => {
     const isVideo = f.type.startsWith("video");
+    const dur = await probeMediaDuration(f);
     loadTake({
       kind: isVideo ? "video" : "audio",
       file: f,
       url: URL.createObjectURL(f),
-      duration: 0,
+      duration: dur,
       lossless: false,
     });
   };
@@ -120,20 +121,25 @@ export default function App() {
     setExDone(false);
     setExError(false);
     setExProgress({ stage: "prepare", ratio: 0 });
-    const opts = { trimStart: trim.start, trimEnd: trim.end };
+    const opts = {
+      trimStart: trim.start,
+      trimEnd: trim.end,
+      knownDuration: take.duration,
+      file: take.file,
+    };
 
     try {
       let name = "";
       if (take.kind === "video") {
-        const { blob, ext } = await renderVideoMp4(take.url, fx, setExProgress, opts);
+        const { blob, ext } = await renderVideoMp4(take.file || take.url, fx, setExProgress, opts);
         name = `echo-voice-${stamp()}.${ext}`;
         download(blob, name);
       } else {
         setExProgress({ stage: "audio", ratio: 0.1 });
         const buffer = await renderAudioBuffer(take.file, fx, opts);
-        setExProgress({ stage: "audio", ratio: 0.4 });
-        const blob = encodeMp3(buffer, (r) =>
-          setExProgress({ stage: "audio", ratio: 0.4 + r * 0.5 })
+        setExProgress({ stage: "audio", ratio: 0.35 });
+        const blob = await encodeMp3(buffer, (r) =>
+          setExProgress({ stage: "audio", ratio: 0.35 + r * 0.6 })
         );
         setExProgress({ stage: "finalize", ratio: 1 });
         name = `echo-voice-${stamp()}.mp3`;
@@ -206,14 +212,15 @@ export default function App() {
         <div className="absolute bottom-1/4 left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-indigo-800/15 blur-[120px]" />
       </div>
 
-      {/* phone frame */}
+      {/* App frame - responsive for mobile, tablets, foldables, and edge-to-edge */}
       <div
-        className="relative h-[100dvh] w-full max-w-[460px] overflow-hidden sm:h-[880px] sm:max-h-[94vh] sm:rounded-[40px] sm:border sm:border-white/15 sm:shadow-[0_25px_80px_-15px_rgba(0,0,0,0.8),0_0_40px_rgba(57,255,135,0.15)]"
-        style={{ background: C.bg }}
+        className="relative h-[100dvh] w-full max-w-[480px] overflow-hidden md:max-w-[640px] lg:max-w-[720px] sm:h-[92vh] sm:max-h-[900px] sm:rounded-[36px] sm:border sm:border-white/15 sm:shadow-[0_25px_80px_-15px_rgba(0,0,0,0.8),0_0_40px_rgba(57,255,135,0.15)]"
+        style={{
+          background: C.bg,
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
+        }}
       >
-        {/* notch */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-30 hidden h-5 w-28 -translate-x-1/2 rounded-b-2xl bg-black/80 backdrop-blur sm:block" />
-
         {stage === "login" && (
           <Login
             onLogin={(u) => {
@@ -246,6 +253,7 @@ export default function App() {
           <Editor
             kind={take.kind as MediaKind}
             url={take.url}
+            knownDuration={take.duration}
             fx={fx}
             setFx={setFx}
             trim={trim}
